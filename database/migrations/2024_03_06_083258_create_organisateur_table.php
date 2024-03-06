@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('organisateur', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("user_id")->constrained()->cascadeOnDelete()->cascadeOnUpdate();
+            $table->string('phone_number')->nullable();
+            $table->string('address')->nullable();
             $table->timestamps();
         });
     }
