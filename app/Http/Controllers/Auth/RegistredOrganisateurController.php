@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -19,10 +18,25 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
-class RegisteredUserController extends Controller
+class RegistredOrganisateurController extends Controller
 {
+
+    public function update(Organisateur $organisateur ,Request $request){
+
+        $data = $request->validate([
+            'status' => ['nullable'],
+            
+        ]);
+        $organisateur->update($data);
+
+        return redirect('/organisateur-dashboard');
+
+    }
+
+    // Other methods...
     public function store(Request $request): RedirectResponse
     {
+        // Validate the request data
         $userdata = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
@@ -37,6 +51,7 @@ class RegisteredUserController extends Controller
             $userdata['picture'] = $pictureName;
         }
 
+
         // Create a new user record
         $user = User::create([
             'name' => $request->name,
@@ -45,45 +60,28 @@ class RegisteredUserController extends Controller
             'picture' => $userdata['picture'],
         ]);
 
-        // Create a new Client instance with the associated user_id
-        $client = new Client();
-        $client->user_id = $user->id; // Assign the user_id here
-        $client->save();
 
+       $organisateurData =  $request->validate([
+            'phone_number' => ['required', 'string'],
+            'address' => ['required', 'string'],
+            'status' => ['nullable'],
+           
+        ]);
+        $organisateurData['user_id'] = $user->id;
+        
+        // Create a new organisateur instance
+       Organisateur::create($organisateurData);
+
+    
         // Trigger the Registered event
         event(new Registered($user));
 
-        Session::flash('success', 'You have registered successfully!');
-        return redirect('/login')->withInput(['email' => $request->email]);
+        // Log in the newly registered user
+
+        // Redirect to the home page
+        Session::flash('success', 'You have registered successfully! Please login to continue.');
+        return redirect('/login');
+
+        // Redirect to the login page
     }
-
-public function filter(Request $request)
-{
-   ;
-    $status = $request->input('status');
-    $client = Client::where('user_id', Auth::id())->first();
-    $reservations = Reservation::where('client_id', $client->id)->get();
-    $organisateur = [];
-    $ticket = [];
-    $allorganisateurs=Organisateur::get();
-
-   foreach ($reservations as $reservation) {
-        $tickets[$reservation->id] = ticket::where('reservation_id', $reservation->id)->get();
-        $organisateur[$reservation->id] = Organisateur::where('id', $reservation->organisateur_id)->get();
-
-    }
-    foreach($allorganisateurs as $allorganisateur){
-        $avgs[$allorganisateur->id] = DB::table('reservations')->join('ticket', 'tickets.reservation_id', '=', 'reservations.id')->where('organisateur_id',$allorganisateur->id);
-
-    }
-
-    // Perform filtering logic using join query
-    $filteredOrganisateurs = Organisateur::query()
-    ->where('statut', $statut)
-    ->whereHas('reservation.ticket')
-        ->get();
-
-    // Pass the filtered data to the view
-    return view('client-dashboard', ['allorganisateur' => $filteredOrganisateurs], compact('avgs','reservations','organisateurs','tickets','client'));
-}
 }
