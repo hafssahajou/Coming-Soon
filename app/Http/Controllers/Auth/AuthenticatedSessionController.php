@@ -9,6 +9,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Models\Organisateur;
+use App\Models\Client;
+use App\Models\Admin;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -29,8 +32,29 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
-    }
+        // Retrieve the authenticated user
+        $user = $request->user();
+
+        // Check if the user is a Organisateur
+        $Organisateur = Organisateur::where('user_id', $user->id)->first();
+        if ($driver) {
+            // Redirect if the user is a Organisateur
+            return redirect()->intended(RouteServiceProvider::HOME);
+        }
+
+        // Check if the user is a client
+        $client = Client::where('user_id', $user->id)->first();
+        if ($client) {
+            // Redirect if the user is a client
+            return redirect()->intended(RouteServiceProvider::Client);
+        }
+        $admin = ADMIN::where('user_id', $user->id)->first();
+        if ($admin) {
+            // Redirect if the user is a ADMIN
+            return redirect()->intended(RouteServiceProvider::ADMIN);
+        }
+        return redirect()->route('/');
+ }
 
     /**
      * Destroy an authenticated session.
@@ -43,6 +67,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }
